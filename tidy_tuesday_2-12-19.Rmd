@@ -1,0 +1,154 @@
+---
+title: "Tidy Tuesday"
+author: "Jenni Putz"
+date: "2/12/2019"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Tidy Tuesday Data
+The following is my first attempt at completing a #TidyTuesday. The goal was to sharpen my ggplot2 skills and learn more methods of data visualization with this package. I did not clean the data myself, I used the cleaned versions provided. Maybe in future Tidy Tuesdays, I will attempt to do this.
+
+This week's data came from American Association for the Advancement of Science Historical Trends and I used the cleaned versions provided by Thomas Mock on GitHub.
+
+My main interest with this dataset was to look at some of the trends in climate spending and the EPA budget.
+
+```{r, message=FALSE}
+library(tidyverse)
+library(gridExtra)
+library(grid)
+```
+
+```{r, message = FALSE}
+fed_rd <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-12/fed_r_d_spending.csv")
+energy_spend <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-12/energy_spending.csv")
+climate_spend <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-12/climate_spending.csv")
+```
+
+First, I wanted to look at each dataset and plot the trends. The first graph is the R&D budget for each department of the U.S. federal government. The second is climate spending by department and the third is energy spending by department. 
+
+```{r}
+plot1 <- fed_rd %>% 
+  ggplot(aes(x = year, y = rd_budget/1000000000, color = department)) + 
+  geom_line() + 
+  theme_minimal() + 
+  labs(title = "U.S. Department R&D Budget",
+       x = "Year",
+       y = "R&D Budget (Billions USD)",
+       caption = "Source: AAAS, Tidy Tuesday")
+plot1
+```
+
+```{r}
+plot2 <- climate_spend %>% 
+  ggplot(aes(x = year, y = gcc_spending/1000000000, color = department)) + 
+  geom_line() + 
+  theme_minimal() + 
+  labs(title = "Climate Spending by Department",
+       x = "Year",
+       y = "Climate Spending (Billions USD)",
+       caption = "Source: AAAS, Tidy Tuesday")
+plot2
+```
+
+```{r}
+plot3 <- energy_spend %>% 
+  ggplot(aes(x = year, y = energy_spending/1000000000, color = department)) + 
+  geom_line() + 
+  theme_minimal() + 
+  labs(title = "Energy Spending by U.S. Department",
+       x = "Year",
+       y = "Energy Spending (Billions USD)",
+       caption = "Source: AAAS, Tidy Tuesday")
+plot3
+```
+
+
+Next, I was interested in the R&D budget for the Environmental Protection Agency under various presidents. I graphed the budget with an overlay of Democratic vs Republican presidents. It appears that EPA's R&D budget is lower under republican presidents than it is under democrats, with the exception of Obama, which is likely due to the funds being directed towards the fiscal stimulus.
+
+```{r}
+political_plot <- fed_rd %>%
+  filter(department == "EPA") %>%
+  ggplot() +
+  geom_line(aes(x = year, y = rd_budget/1000000000), color = "black") + 
+  geom_rect(aes(xmin = 1974, xmax = 1977, ymin = 0, ymax = Inf, fill = "Republican"), color= NA, alpha = .01) +
+  geom_rect(aes(xmin = 1977, xmax = 1981, ymin = 0, ymax = Inf, fill = "Democrat"), color= NA, alpha = .01) +
+  geom_rect(aes(xmin = 1981, xmax = 1993, ymin = 0, ymax = Inf, fill = "Republican"), color= NA, alpha = .01) +
+  geom_rect(aes(xmin = 1993, xmax = 2001, ymin = 0, ymax = Inf, fill = "Democrat"), color= NA, alpha = .01) +
+  geom_rect(aes(xmin = 2001, xmax = 2009, ymin = 0, ymax = Inf, fill = "Republican"), color= NA, alpha = .01) +
+  geom_rect(aes(xmin = 2009, xmax = 2017, ymin = 0, ymax = Inf, fill = "Democrat"), color= NA, alpha = .01) +
+  scale_fill_manual("President's Political Party", 
+                    values = c('blue', 'red'),
+                    guide = guide_legend(override.aes = list(alpha = .1))) +
+  scale_x_continuous() + scale_y_continuous() +
+  labs(title = "EPA Spending on Research and Development",
+       x = "Year",
+       y = "Budget (Billions USD)",
+       caption = "Source: AAAS, Tidy Tuesday") +
+    theme_minimal()
+
+political_plot
+```
+
+After looking at the EPA R&D budget, I thought it would be interesting to plot air pollution trends along side the budget. I gathered data from the EPA on various types of air pollution. I focus on PM2.5 here because this form of pollution can have a lot of health impacts on the population and is more common than other types of pollution.
+
+```{r}
+library(readxl)
+pollution <- as.tibble(read_xlsx("pollutiondata.xlsx", sheet = 2))
+pollution
+
+```
+
+I thought that there could be inverse trends due to the EPA producing better technology to mitigate air pollution with a higher R&D budget. The PM2.5 appears to move in a similar trend as the R&D budget, which is interesting. Potentially, the R&D budget is decreasing because air pollution is decreasing as well.
+```{r}
+g.top <- ggplot(pollution, aes(x = year, y = Total)) +
+  geom_line() +
+  scale_y_continuous() +
+  theme_classic() +
+  theme(plot.margin = unit(c(2,1,-30,5),units="points"),
+        axis.title.y = element_text(vjust =0.3)) +
+  labs(y = "PM2.5",
+       title = "EPA R&D Budget and PM2.5 Air Pollution")
+
+g.bottom <- ggplot(fed_rd %>% filter(department == "EPA" & year >= "1990"), aes(x = year, y = rd_budget/1000000000)) +
+  geom_line() +
+  theme_classic() +
+  theme(plot.margin = unit(c(0,4,1,13),units="points")) +
+  labs(x = "Year", y = "EPA R&D Budget (billions)",
+       caption = "Source: AAAS, EPA, Tidy Tuesday")
+
+pollution_plot <- grid.arrange(g.top,g.bottom, heights = c(2/5, 3/5))
+pollution_plot
+
+```
+
+I then thought that maybe this trend was affected by the increases in wildfires that have occured in the past few years. Wildfire smoke contributes greatly to PM2.5 pollution. The EPA dataset includes total PM2.5 pollution excluding wildfires. When we remove wildfire smoke, the trends are still very similar.
+
+```{r}
+g.top2 <- ggplot(pollution %>% filter(year >= "2002"), aes(x = year, y = Total_without_wildfires)) +
+  geom_line() +
+  scale_y_continuous() +
+  theme_classic() +
+  theme(plot.margin = unit(c(2,1,-30,5),units="points"),
+        axis.title.y = element_text(vjust =0.3)) +
+  labs(y = "PM2.5",
+       title = "EPA R&D Budget and PM2.5 Pollution",
+       subtitle = "Excluding Pollution from Wildfires")
+
+g.bottom2 <- ggplot(fed_rd %>% filter(department == "EPA" & year >= "2002"), aes(x = year, y = rd_budget/1000000000)) +
+  geom_line() +
+  theme_classic() +
+  theme(plot.margin = unit(c(0,4,1,13),units="points")) +
+  labs(x = "Year", y = "EPA R&D Budget (billions)",
+       caption = "Source: AAAS, EPA, Tidy Tuesday")
+
+pollution_plot <- grid.arrange(g.top2,g.bottom2, heights = c(2/5, 3/5))
+pollution_plot
+
+```
