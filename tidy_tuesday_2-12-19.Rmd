@@ -33,7 +33,7 @@ climate_spend <- readr::read_csv("https://raw.githubusercontent.com/rfordatascie
 
 First, I wanted to look at each dataset and plot the trends. The first graph is the R&D budget for each department of the U.S. federal government. The second is climate spending by department and the third is energy spending by department. 
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 plot1 <- fed_rd %>% 
   ggplot(aes(x = year, y = rd_budget/1000000000, color = department)) + 
   geom_line() + 
@@ -45,7 +45,7 @@ plot1 <- fed_rd %>%
 plot1
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 plot2 <- climate_spend %>% 
   ggplot(aes(x = year, y = gcc_spending/1000000000, color = department)) + 
   geom_line() + 
@@ -57,7 +57,7 @@ plot2 <- climate_spend %>%
 plot2
 ```
 
-```{r}
+```{r, message=FALSE,warning=FALSE}
 plot3 <- energy_spend %>% 
   ggplot(aes(x = year, y = energy_spending/1000000000, color = department)) + 
   geom_line() + 
@@ -72,7 +72,7 @@ plot3
 
 Next, I was interested in the R&D budget for the Environmental Protection Agency under various presidents. I graphed the budget with an overlay of Democratic vs Republican presidents. It appears that EPA's R&D budget is lower under republican presidents than it is under democrats, with the exception of Obama, which is likely due to the funds being directed towards the fiscal stimulus.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 political_plot <- fed_rd %>%
   filter(department == "EPA") %>%
   ggplot() +
@@ -98,7 +98,7 @@ political_plot
 
 After looking at the EPA R&D budget, I thought it would be interesting to plot air pollution trends along side the budget. I gathered data from the EPA on various types of air pollution. I focus on PM2.5 here because this form of pollution can have a lot of health impacts on the population and is more common than other types of pollution.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(readxl)
 pollution <- as.tibble(read_xlsx("pollutiondata.xlsx", sheet = 2))
 pollution
@@ -106,7 +106,7 @@ pollution
 ```
 
 I thought that there could be inverse trends due to the EPA producing better technology to mitigate air pollution with a higher R&D budget. The PM2.5 appears to move in a similar trend as the R&D budget, which is interesting. Potentially, the R&D budget is decreasing because air pollution is decreasing as well.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 g.top <- ggplot(pollution, aes(x = year, y = Total)) +
   geom_line() +
   scale_y_continuous() +
@@ -130,7 +130,7 @@ pollution_plot
 
 I then thought that maybe this trend was affected by the increases in wildfires that have occured in the past few years. Wildfire smoke contributes greatly to PM2.5 pollution. The EPA dataset includes total PM2.5 pollution excluding wildfires. When we remove wildfire smoke, the trends are still very similar.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 g.top2 <- ggplot(pollution %>% filter(year >= "2002"), aes(x = year, y = Total_without_wildfires)) +
   geom_line() +
   scale_y_continuous() +

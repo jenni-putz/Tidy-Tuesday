@@ -1,0 +1,138 @@
+---
+title: "2-19-19 Tidy Tuesday"
+author: "Jenni Putz"
+date: "2/19/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## U.S. PhDs awarded
+This week's data set comes from the NSF and contains data on PhDs awarded. As always, thanks to Thomas Mock for cleaning this dataset and making it available on github.
+
+## Getting Started
+
+```{r loading}
+library(tidyverse)
+library(readr)
+library(readxl)
+```
+
+```{r reading}
+phd_field <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
+```
+
+### First Glance
+```{r plot1}
+plot1 <- phd_field %>% group_by(broad_field, year) %>%
+  summarize(num_broad = sum(n_phds, na.rm = TRUE, rm = FALSE)) %>%
+  ggplot() +
+  geom_line(aes(x = year, y = num_broad, color = broad_field )) +
+  labs(
+    x = "Year",
+    y = "PhDs Awarded",
+    title = "Number of PhDs Awarded by Field",
+    caption = "Source: NSF, Tidy Tuesday"
+  ) + 
+  theme_minimal()
+  
+plot1
+```
+
+### Major Fields
+```{r econ}
+plot2 <- phd_field %>% filter(major_field == "Economics") %>%
+  group_by(major_field, year) %>%
+  summarize(num_major = sum(n_phds, na.rm = TRUE, rm = FALSE)) %>%
+  ggplot() +
+  geom_line(aes(x = year, y = num_major, color = major_field))+
+  labs(
+    x = "Year",
+    y = "Number of PhDs",
+    title = "Number of Economics PhDs Awarded",
+    caption = "Source: NSF, Tidy Tuesday"
+  ) +
+  theme_minimal()
+
+plot2
+```
+
+### Closer Look at Econ
+
+I'll be honest... This was significantly less exciting of a graph than I anticipated.
+```{r econ2}
+plot3 <- phd_field %>% filter(major_field == "Economics") %>%
+  ggplot() +
+  geom_line(aes(x = year, y = n_phds, color = field)) +
+  labs(
+    x = "Year",
+    y = "Number of PhDs",
+    title = "Number of Economics PhDs Awarded by Field",
+    caption = "Source: NSF, Tidy Tuesday"
+  ) +
+  theme_minimal()
+
+plot3
+```
+
+## Gender Composition
+I want to look at gender composition of PhDs being awarded. Specifically interested in how the composition in STEM and Economics fields have changed over time. Cleaned the data elsewhere and reading it in. 
+
+```{r raw_data}
+broad_data <- read_xlsx("sed17-sr-tab014.xlsx", sheet = 2)
+field_data <- read_xlsx("sed17-sr-tab015.xlsx", sheet = 3)
+
+
+broad_data <- broad_data[-c(1),]
+```
+
+```{r plot_gender}
+plot4 <- broad_data %>% ggplot() +
+  geom_line(aes(x = year, y = percent_female, color = field)) +
+  labs(
+    x = "Year",
+    y = "Percent Female",
+    title = "Percent of PhDs Awarded to Females",
+    caption = "Source: NSF"
+  ) +
+  theme_minimal()
+
+plot4
+```
+
+
+
+```{r plot_field_gender}
+plot5 <- field_data %>% filter(field == "Economics") %>%
+  ggplot() +
+  geom_line(aes(x = year, y = percent_female)) +
+  labs(
+    x = "Year",
+    y = "Percent Female",
+    title = "Percent of Economics PhDs Awarded to Females",
+    caption = "Source: NSF"
+  ) +
+  theme_minimal()
+
+plot5
+```
+
+
+Let's compare econ to other fields with traditionally low female representation.
+```{r plot_gender2}
+plot6 <- field_data %>% 
+  filter(field == "Economics" | field == "Computer and information sciences" | field == "Physics and astronomy" | field == "Mathematics and statistics" | field == "Aerospace, aeronautical, and astronautical engineering" | field == "Mechanical engineering") %>%
+  ggplot() +
+  geom_line(aes(x = year, y = percent_female, color = field)) +
+  labs(
+    x = "Year",
+    y = "Percent Female",
+    title = "Percent of Economics PhDs Awarded to Females",
+    caption = "Source: NSF"
+  ) +
+  theme_minimal()
+                          
+plot6
+```
